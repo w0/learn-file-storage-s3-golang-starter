@@ -70,7 +70,7 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	fileName := getAssetName(dbVideo.ID, contentType)
+	fileName := getAssetName(contentType)
 	assetPath := cfg.getAssetPath(fileName)
 
 	f, err := os.Create(assetPath)

@@ -1,12 +1,12 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/google/uuid"
 )
 
 func (cfg apiConfig) ensureAssetsDir() error {
@@ -16,9 +16,12 @@ func (cfg apiConfig) ensureAssetsDir() error {
 	return nil
 }
 
-func getAssetName(videoId uuid.UUID, contentType string) string {
+func getAssetName(contentType string) string {
 	extension := getFileType(contentType)
-	return fmt.Sprintf("%s%s", videoId, extension)
+	// help prevent caching of updated assets by giving each image a random filename
+	bSlice := make([]byte, 32)
+	rand.Read(bSlice)
+	return fmt.Sprintf("%s%s", base64.RawURLEncoding.EncodeToString(bSlice), extension)
 }
 
 func getFileType(contentType string) string {
