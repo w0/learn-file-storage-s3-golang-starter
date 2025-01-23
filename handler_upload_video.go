@@ -69,14 +69,36 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	ratio, err := getVideoAspectRatio(tmp.Name())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "failed to get aspect ratio", err)
+		return
+	}
+
 	tmp.Seek(0, io.SeekStart)
 
+	procVideo, err := processVideoForFastStart(tmp.Name())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "video process error", err)
+		return
+	}
+
+	videoFile, err := os.Open(procVideo)
+	defer videoFile.Close()
+	defer os.Remove(videoFile.Name())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "unable to open processed video", err)
+		return
+	}
+
 	fileKey := getAssetName(mediaType)
+
+	fileKey = addRatioPrefix(fileKey, ratio)
 
 	_, err = cfg.s3Client.PutObject(r.Context(), &s3.PutObjectInput{
 		Bucket:      &cfg.s3Bucket,
 		Key:         &fileKey,
-		Body:        tmp,
+		Body:        videoFile,
 		ContentType: &mediaType,
 	}, func(o *s3.Options) {
 		o.Region = cfg.s3Region
