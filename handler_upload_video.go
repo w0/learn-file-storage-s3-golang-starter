@@ -91,13 +91,13 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	fileKey := getAssetName(mediaType)
+	assetName := getAssetName(mediaType)
 
-	fileKey = addRatioPrefix(fileKey, ratio)
+	prefixedName := addRatioPrefix(assetName, ratio)
 
 	_, err = cfg.s3Client.PutObject(r.Context(), &s3.PutObjectInput{
 		Bucket:      &cfg.s3Bucket,
-		Key:         &fileKey,
+		Key:         &prefixedName,
 		Body:        videoFile,
 		ContentType: &mediaType,
 	}, func(o *s3.Options) {
@@ -106,10 +106,24 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "s3 upload failed", err)
+		return
 	}
 
-	videoUrl := cfg.getS3Url(fileKey)
-	dbVideo.VideoURL = &videoUrl
-	cfg.db.UpdateVideo(dbVideo)
+	videoKey := cfg.createBucketKey(prefixedName)
 
+	dbVideo.VideoURL = &videoKey
+	err = cfg.db.UpdateVideo(dbVideo)
+
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "failed to store video key", err)
+		return
+	}
+
+	signedVideo, err := cfg.dbVideoToSignedVideo(dbVideo)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "failed getting signed video", err)
+		return
+	}
+
+	respondWithJSON(w, http.StatusAccepted, signedVideo)
 }

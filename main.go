@@ -86,7 +86,9 @@ func main() {
 		log.Fatal("Error reading aws profile")
 	}
 
-	s3Client := s3.NewFromConfig(awsCfg, func(o *s3.Options) {})
+	s3Client := s3.NewFromConfig(awsCfg, func(o *s3.Options) {
+		o.Region = s3Region
+	})
 
 	port := os.Getenv("PORT")
 	if port == "" {
