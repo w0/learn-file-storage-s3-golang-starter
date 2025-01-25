@@ -109,7 +109,7 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	videoKey := cfg.createBucketKey(prefixedName)
+	videoKey := cfg.createVideoUrl(prefixedName)
 
 	dbVideo.VideoURL = &videoKey
 	err = cfg.db.UpdateVideo(dbVideo)
@@ -119,11 +119,5 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	signedVideo, err := cfg.dbVideoToSignedVideo(dbVideo)
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "failed getting signed video", err)
-		return
-	}
-
-	respondWithJSON(w, http.StatusAccepted, signedVideo)
+	respondWithJSON(w, http.StatusAccepted, dbVideo)
 }

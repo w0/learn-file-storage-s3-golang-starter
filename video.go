@@ -2,52 +2,9 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"os/exec"
-	"strings"
-	"time"
-
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/bootdotdev/learn-file-storage-s3-golang-starter/internal/database"
 )
-
-func (cfg *apiConfig) dbVideoToSignedVideo(video database.Video) (database.Video, error) {
-	if video.VideoURL == nil {
-		return video, nil
-	}
-
-	splits := strings.Split(*video.VideoURL, ",")
-
-	if len(splits) < 2 {
-		return video, nil
-	}
-
-	presignedUrl, err := generatePresignedURL(cfg.s3Client, splits[0], splits[1], time.Minute*5)
-	if err != nil {
-		return video, err
-	}
-
-	video.VideoURL = &presignedUrl
-
-	return video, nil
-}
-
-func generatePresignedURL(s3Client *s3.Client, bucket, key string, expireTime time.Duration) (string, error) {
-	preSign := s3.NewPresignClient(s3Client)
-
-	req, err := preSign.PresignGetObject(context.Background(), &s3.GetObjectInput{
-		Bucket: aws.String(bucket),
-		Key:    aws.String(key),
-	}, s3.WithPresignExpires(expireTime))
-
-	if err != nil {
-		return "", err
-	}
-
-	return req.URL, nil
-}
 
 func getVideoAspectRatio(filepath string) (string, error) {
 	eCmd := exec.Command("/usr/bin/ffprobe", "-v", "error", "-print_format", "json", "-show_streams", filepath)

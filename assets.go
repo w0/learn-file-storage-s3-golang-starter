@@ -47,6 +47,6 @@ func (cfg *apiConfig) getAssetUrl(filename string) string {
 	return fmt.Sprintf("http://localhost:%s/assets/%s", cfg.port, filename)
 }
 
-func (cfg *apiConfig) createBucketKey(filename string) string {
-	return fmt.Sprintf("%s,%s", cfg.s3Bucket, filename)
+func (cfg *apiConfig) createVideoUrl(filename string) string {
+	return fmt.Sprintf("%s/%s", cfg.s3CfDistribution, filename)
 }
